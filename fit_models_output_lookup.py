@@ -18,9 +18,9 @@ load_dotenv()
 
 sns.set_theme(style="ticks")
 
-bucket=os.getenv(DATA_BUCKET)
-file_name=os.getenv(COUNT_DATA_FILE)
-area_file=os.getenv(AREA_FILE)
+bucket=os.getenv("DATA_BUCKET")
+file_name=os.getenv("COUNT_DATA_FILE")
+area_file=os.getenv("AREA_FILE")
 
 observation_df_filt, stats_df = load_footfall_dedupe_data(
     bucket,
