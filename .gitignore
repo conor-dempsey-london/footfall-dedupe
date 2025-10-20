@@ -1,0 +1,15 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# output folders
+figures
+models
+output
+
+.env
+.gitattributes
+
+# pymc artifacts
+*.pyc
+
