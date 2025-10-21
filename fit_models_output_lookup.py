@@ -127,5 +127,5 @@ scale_factors = pd.concat(scale_factor_dfs)
 Path("./output").mkdir(exist_ok=True)
 
 print('\n', 'Saving scale factor lookup table to file...')
-scale_factors.to_csv('./output/scale_factor_lookup.csv')
+scale_factors.to_csv('./output/scale_factor_lookup.csv', index=False)
 
