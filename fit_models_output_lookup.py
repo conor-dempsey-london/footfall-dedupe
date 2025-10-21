@@ -2,6 +2,7 @@ import arviz as az
 import pymc as pm
 import numpy as np
 import pandas as pd
+import os
 from pathlib import Path
 import seaborn as sns
 from scipy import stats 
@@ -19,8 +20,16 @@ load_dotenv()
 sns.set_theme(style="ticks")
 
 bucket=os.getenv("DATA_BUCKET")
+if bucket is None:
+    raise ValueError("DATA_BUCKET not found in .env file")
+
 file_name=os.getenv("COUNT_DATA_FILE")
+if file_name is None:
+    raise ValueError("COUNT_DATA_FILE not found in .env file")
+
 area_file=os.getenv("AREA_FILE")
+if area_file is None:
+    raise ValueError("AREA_FILE not found in .env file")
 
 observation_df_filt, stats_df = load_footfall_dedupe_data(
     bucket,
@@ -117,5 +126,6 @@ scale_factors = pd.concat(scale_factor_dfs)
 
 Path("./output").mkdir(exist_ok=True)
 
+print('\n', 'Saving scale factor lookup table to file...')
 scale_factors.to_csv('./output/scale_factor_lookup.csv')
 
