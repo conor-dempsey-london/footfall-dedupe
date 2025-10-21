@@ -20,7 +20,10 @@ def load_footfall_dedupe_data(
     obj_area = s3.get_object(Bucket= bucket, Key= area_file) 
 
     # get object and file (key) from bucket
-    observation_df = pd.read_csv(obj_data['Body'], parse_dates=['count_date']) 
+    observation_df = pd.read_csv(
+        obj_data['Body'], 
+        parse_dates=['count_date'],
+        low_memory=False) 
 
     observation_df.rename(
         columns={'total_unique_domestic_visitors': 'total_unique_visitors'},
@@ -156,7 +159,7 @@ def get_sample_of_footfall_dedupe_data(
         .isin(sample_areas)]
         .sort_values('count_date', ascending=False)
         .groupby('poi_uid')
-        .apply(lambda x: x.sample(n_obs_per_area, replace=True), include_groups=True)
+        .apply(lambda x: x.sample(n_obs_per_area, replace=True), include_groups=False)
         .drop(columns=['poi_uid', 'poi_id', 'area_bin'])
         .reset_index()
     )
