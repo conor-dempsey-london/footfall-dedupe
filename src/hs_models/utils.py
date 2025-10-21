@@ -160,7 +160,7 @@ def get_sample_of_footfall_dedupe_data(
         .sort_values('count_date', ascending=False)
         .groupby('poi_uid')
         .apply(lambda x: x.sample(n_obs_per_area, replace=True), include_groups=False)
-        .drop(columns=['poi_uid', 'poi_id', 'area_bin'])
+        .drop(columns=['poi_id', 'area_bin'])
         .reset_index()
     )
 
