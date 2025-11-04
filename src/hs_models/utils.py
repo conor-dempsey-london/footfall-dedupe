@@ -9,6 +9,10 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import xarray as xr
 
+from hs_models.models import AreaCountInteraction1DPartPool
+
+
+HEX_AREA = 0.079566 #area of a hex grid in km2
 
 def load_footfall_dedupe_data(
     bucket, file_name, area_file
@@ -75,7 +79,17 @@ def load_footfall_dedupe_data(
             })
     )
 
-    observation_df=day_df.merge(am_df, on=['poi_uid', 'count_date', 'poi_name', 'poi_id', 'poi_type', 'caz_inner_outer'], how='inner', suffixes=('_day', '_am'))
+    observation_df=day_df.merge(am_df, on=[
+            'poi_uid', 
+            'count_date', 
+            'poi_name', 
+            'poi_id', 
+            'poi_type', 
+            'caz_inner_outer',
+        ], 
+        how='inner', 
+        suffixes=('_day', '_am'),
+    )
 
     observation_df=observation_df.merge(pm_df, on=['poi_uid', 'count_date', 'poi_name', 'poi_id', 'poi_type', 'caz_inner_outer'], how='inner', suffixes=('_day', '_pm'))
 
@@ -104,6 +118,8 @@ def load_footfall_dedupe_data(
 
     # create area bins so we can take a stratified sample across the range of area sizes
     observation_df['area_bin'] = pd.qcut(observation_df['area'], q=6)
+
+    stats_dfs = []
 
     for count_type in ['worker', 'resident', 'visitor']:
 
@@ -134,6 +150,24 @@ def load_footfall_dedupe_data(
             )
 
             stats_df = pd.DataFrame(res.tolist(), index=res.index, columns=[f'slope_{count_type}', f'intercept_{count_type}']).reset_index()
+
+            stats_df.rename(columns={
+                f'slope_{count_type}': 'slope', 
+                f'intercept_{count_type}': 'intercept',
+            }, inplace=True)
+
+            stats_df['count_type'] = count_type
+            stats_df['count_time'] = time_indicator
+
+            stats_dfs.append(stats_df)
+
+    stats_df = pd.concat(stats_dfs)
+    stats_df = stats_df.merge(area_df[['poi_nuid', 'area']], on='poi_nuid', how='left')
+    stats_df['area_bin'] = pd.qcut(
+        stats_df['area'], 
+        [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+        )
+
 
     return observation_df, stats_df
 
@@ -410,3 +444,27 @@ def make_all_plots(trace, scalarMap):
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     plot_moderation_effect(trace, trace.constant_data.m.values, m_quantiles, scalarMap, ax[0])
     az.plot_posterior(trace, var_names="β2", ax=ax[1])
+
+
+def load_9_models(
+    model_dir='models',
+    model_type=AreaCountInteraction1DPartPool,
+    file_prefix='parpool',
+    count_types=['worker', 'resident', 'visitor'],
+    count_times = ['day', 'am', 'pm']
+    ):
+
+    models = {}
+
+    for count_type in count_types:
+        models_count_type = {}
+
+        for count_time in count_times:
+            print(f'Loading model for: {count_type}s {count_time}')
+            
+            models_count_type[count_time] = model_type.load(
+                f'./{model_dir}/{file_prefix}_{count_type}_{count_time}.nc',
+                )
+        models[count_type] = models_count_type
+
+    return models
