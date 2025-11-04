@@ -11,6 +11,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/adwaita-icon-theme-48.1-unix_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/arviz-0.22.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/arviz-base-0.6.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/arviz-stats-0.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/asttokens-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/at-spi2-atk-2.38.0-h0630a04_3.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/at-spi2-core-2.40.3-h0630a04_0.tar.bz2
@@ -146,6 +148,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libxml2-2.13.8-h04c0eec_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.3.1-hb9d3cd8_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/llvm-openmp-20.1.8-h4922eb0_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/llvmlite-0.45.1-py313hdd307be_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/logical-unification-0.4.6-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/matplotlib-base-3.10.5-py313h683a580_0.conda
@@ -160,6 +163,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.62.1-py313hd8e3f9f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py313h17eae1a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.3-h55fea9a_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.5.2-h26f9b46_0.conda
@@ -174,6 +178,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pillow-11.3.0-py313h8db990d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.46.4-h54a6638_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.4.0-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/preliz-0.22.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.51-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-7.0.0-py313h07c4f96_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
@@ -244,11 +249,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py313h07c4f96_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/30/e3/80304e6ca8933a2e876a4cf684e8dc128ab9293485c415843d099a0950be/arviz_stats-0.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/58/15/915ceb4340a3c1a5d3bc8349c525fa42592614b68a249250eb9be3f7e5a1/better_optimize-0.1.6-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/f7/97/ad1a907c0173a90dd4df7228f24a3ec61058bc1a9ff8a0caec20a0cc622e/llvmlite-0.45.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/78/7e/bf2e3634993d57f95305c7cee4c9c6cb3c9c78404ee7b49569a0dfecfe33/numba-0.62.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/74/c3/71f356442bb17ba5d2116b87e63fbe6f18e825b3db8ffd01e74dfd68cc9b/preliz-0.21.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6c/98/468cb649f208a6f1279448e6e5247b37ae79cf5e4041186f1e2ef3d16345/pydantic-2.12.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/62/273dd70b0026a085c7b74b000394e1ef95719ea579c76ea2f0cc8893736d/pydantic_core-2.41.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: git+https://github.com/conor-dempsey-london/pymc-extras.git#13cc53baaf75c8f224387d1d38bf53bae360f29e
@@ -317,34 +318,36 @@ packages:
   - pkg:pypi/arviz?source=hash-mapping
   size: 1477179
   timestamp: 1752135391904
-- pypi: https://files.pythonhosted.org/packages/30/e3/80304e6ca8933a2e876a4cf684e8dc128ab9293485c415843d099a0950be/arviz_stats-0.6.0-py3-none-any.whl
-  name: arviz-stats
-  version: 0.6.0
-  sha256: ec327c3d4249562f9b000a484a371a373eaa0b4f516a25ad59b69eb06d70e103
-  requires_dist:
-  - numpy>=2
-  - scipy>=1.10
-  - sphinx-book-theme ; extra == 'doc'
-  - myst-parser[linkify] ; extra == 'doc'
-  - myst-nb ; extra == 'doc'
-  - sphinx-copybutton ; extra == 'doc'
-  - numpydoc ; extra == 'doc'
-  - sphinx ; extra == 'doc'
-  - sphinx-design ; extra == 'doc'
-  - jupyter-sphinx ; extra == 'doc'
-  - h5netcdf ; extra == 'doc'
-  - sphinx-autosummary-accessors ; extra == 'doc'
-  - numba ; extra == 'numba'
-  - xarray-einstats[einops] ; extra == 'numba'
-  - pytest ; extra == 'test'
-  - pytest-cov ; extra == 'test'
-  - pytest ; extra == 'test-xarray'
-  - pytest-cov ; extra == 'test-xarray'
-  - h5netcdf ; extra == 'test-xarray'
-  - arviz-base>=0.6.0 ; extra == 'xarray'
-  - xarray-einstats ; extra == 'xarray'
-  - numba ; extra == 'xarray'
-  requires_python: '>=3.11'
+- conda: https://conda.anaconda.org/conda-forge/noarch/arviz-base-0.6.0-pyhd8ed1ab_0.conda
+  sha256: 78316de7480664dbbac585d7c1c4a40795489b519fae19d992cc9cba82fd7a4c
+  md5: 47eeffdfcc4ba9a3aa966ae38389e3c3
+  depends:
+  - numpy >=1.24
+  - python >=3.11
+  - typing_extensions >=3.10
+  - xarray >=2024.11.0
+  license: Apache-2.0
+  license_family: Apache
+  purls:
+  - pkg:pypi/arviz-base?source=hash-mapping
+  size: 1304679
+  timestamp: 1750848118403
+- conda: https://conda.anaconda.org/conda-forge/noarch/arviz-stats-0.6.0-pyhd8ed1ab_0.conda
+  sha256: e732b40e71c37fe1a7ab5a6f2bc0bd7ab9c066bf4fc55f1983507b44a83f3010
+  md5: 4cdc9c801374c645972c463843d2a6fb
+  depends:
+  - arviz-base 0.6.0
+  - numba
+  - numpy >=2
+  - python >=3.11
+  - scipy >=1.10
+  - xarray-einstats
+  license: Apache-2.0
+  license_family: Apache
+  purls:
+  - pkg:pypi/arviz-stats?source=hash-mapping
+  size: 85155
+  timestamp: 1750851414376
 - conda: https://conda.anaconda.org/conda-forge/noarch/asttokens-3.0.0-pyhd8ed1ab_1.conda
   sha256: 93b14414b3b3ed91e286e1cbe4e7a60c4e1b1c730b0814d1e452a8ac4b9af593
   md5: 8f587de4bcf981e26228f268df374a9b
@@ -1253,7 +1256,7 @@ packages:
 - pypi: ./
   name: hs-models
   version: 0.1.0
-  sha256: dbd9e99ce398d67e6e8ff2f755eb1bb4a7258ec97b2cc2bc9770dc9af92c24ff
+  sha256: 6edd2557c429076e4b1dd5ac804c8f0e921eab39dfcfc25a67474b7493024011
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.1.0-pyhd8ed1ab_0.conda
@@ -2162,11 +2165,23 @@ packages:
   purls: []
   size: 4243012
   timestamp: 1756144430312
-- pypi: https://files.pythonhosted.org/packages/f7/97/ad1a907c0173a90dd4df7228f24a3ec61058bc1a9ff8a0caec20a0cc622e/llvmlite-0.45.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: llvmlite
-  version: 0.45.1
-  sha256: 57c48bf2e1083eedbc9406fb83c4e6483017879714916fe8be8a72a9672c995a
-  requires_python: '>=3.10'
+- conda: https://conda.anaconda.org/conda-forge/linux-64/llvmlite-0.45.1-py313hdd307be_0.conda
+  sha256: 5b8e2063e93bea160fd50274d05ce4436f01c383a392f293b769dfb973c4df21
+  md5: 5afb15643ef1fcea20798bb6086bb3f9
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - libstdcxx >=14
+  - libzlib >=1.3.1,<2.0a0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - zstd >=1.5.7,<1.6.0a0
+  license: BSD-2-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/llvmlite?source=hash-mapping
+  size: 34153671
+  timestamp: 1759394632193
 - conda: https://conda.anaconda.org/conda-forge/noarch/logical-unification-0.4.6-pyhd8ed1ab_2.conda
   sha256: d67f8071999e85ee566fe40cd22d7fe26d4f1502fbb89abde4010077288691ff
   md5: 3b2d21d076966ff0e4de38eb733d828d
@@ -2353,14 +2368,32 @@ packages:
   - pkg:pypi/nest-asyncio?source=hash-mapping
   size: 11543
   timestamp: 1733325673691
-- pypi: https://files.pythonhosted.org/packages/78/7e/bf2e3634993d57f95305c7cee4c9c6cb3c9c78404ee7b49569a0dfecfe33/numba-0.62.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-  name: numba
-  version: 0.62.1
-  sha256: 8c9460b9e936c5bd2f0570e20a0a5909ee6e8b694fd958b210e3bde3a6dba2d7
-  requires_dist:
-  - llvmlite>=0.45.0.dev0,<0.46
-  - numpy>=1.22,<2.4
-  requires_python: '>=3.10'
+- conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.62.1-py313hd8e3f9f_0.conda
+  sha256: 0b0ccf81ecd0cfb934818c3fb88404821904fe84e67815ab9958d37b0dca61e4
+  md5: 82ffdc573a667626351f4110605da846
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - _openmp_mutex >=4.5
+  - libgcc >=14
+  - libstdcxx >=14
+  - llvmlite >=0.45.0,<0.46.0a0
+  - numpy >=1.23,<3
+  - numpy >=1.24,<2.4
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  constrains:
+  - cudatoolkit >=11.2
+  - cuda-version >=11.2
+  - tbb >=2021.6.0
+  - cuda-python >=11.6
+  - scipy >=1.0
+  - libopenblas !=0.3.6
+  license: BSD-2-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/numba?source=hash-mapping
+  size: 5743830
+  timestamp: 1759165232580
 - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.2.6-py313h17eae1a_0.conda
   sha256: 7da9ebd80a7311e0482c4c6393be0eddf0012b3846df528e375037409b3d2b3d
   md5: 7a2d2f9adecd86ed5c29c2115354f615
@@ -2599,22 +2632,22 @@ packages:
   - pkg:pypi/platformdirs?source=compressed-mapping
   size: 23653
   timestamp: 1756227402815
-- pypi: https://files.pythonhosted.org/packages/74/c3/71f356442bb17ba5d2116b87e63fbe6f18e825b3db8ffd01e74dfd68cc9b/preliz-0.21.0-py3-none-any.whl
-  name: preliz
-  version: 0.21.0
-  sha256: 8b91e7d013b998380e51b0699cb3d950ec718e0aa9c16815da99597b381abca5
-  requires_dist:
-  - arviz-stats>=0.6.0
-  - matplotlib>=3.8
-  - numba>=0.59
-  - numpy>=2.0
-  - scipy>=1.12
-  - nbclient>=0.2 ; extra == 'full'
-  - ipywidgets ; extra == 'full'
-  - ipympl ; extra == 'full'
-  - jupyterlab ; extra == 'lab'
-  - notebook ; extra == 'notebook'
-  requires_python: '>=3.11'
+- conda: https://conda.anaconda.org/conda-forge/noarch/preliz-0.22.0-pyhd8ed1ab_0.conda
+  sha256: de58016d6b44444564f9fc304101fbf458c4b12b71dc559812b42bdc3769dc01
+  md5: d3beaae9d9d9e302cdc18cd84cb7ebec
+  depends:
+  - arviz-stats >=0.6.0
+  - matplotlib-base >=3.8
+  - numba >=0.59
+  - numpy >=2.0
+  - python >=3.11
+  - scipy >=1.12
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/preliz?source=hash-mapping
+  size: 437740
+  timestamp: 1761035620291
 - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.51-pyha770c72_0.conda
   sha256: ebc1bb62ac612af6d40667da266ff723662394c0ca78935340a5b5c14831227b
   md5: d17ae9db4dc594267181bd199bf9a551
