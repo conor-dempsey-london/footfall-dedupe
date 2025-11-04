@@ -16,6 +16,7 @@ from hs_models.utils import (
 )
 from hs_models.models import (
     LinearPooledNoInteraction,
+    LinearPartPoolNoInteraction,
     AreaCountInteraction1DPartPoolPositive,
 )
 
@@ -150,7 +151,7 @@ plot_sample_data(X, prior_predictive_samples.y.mean(dim=('sample')))
 
 baseline_model.fit(X, y)
 
-# %% 
+# %% 5. Posterior checks
 
 az.plot_trace(baseline_model.idata, figsize=(20,10))
 
@@ -158,5 +159,16 @@ az.summary(baseline_model.idata)
 
 plot_data_prior_posterior(baseline_model)
 
-# %%
+# %% Next model - B1 partial pooling
 
+partpool_no_b2_model = LinearPartPoolNoInteraction()
+
+partpool_no_b2_model.sample_prior_predictive(X)
+plot_sample_data(X, partpool_no_b2_model.prior_predictive.y.mean(dim=('sample')))
+partpool_no_b2_model.fit(X, y)
+az.plot_trace(partpool_no_b2_model.idata, figsize=(20,10))
+az.summary(partpool_no_b2_model.idata)
+plot_data_prior_posterior(partpool_no_b2_model)
+
+
+# %%
