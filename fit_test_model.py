@@ -1,4 +1,7 @@
 # %% setup and data loading
+# ! %reload_ext autoreload
+# ! %autoreload 2
+
 import arviz as az
 import preliz as pz
 import pymc as pm
@@ -124,9 +127,10 @@ def plot_data_prior_posterior(model):
     )
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharex=True, sharey=True)
-    sns.scatterplot(df, x='total_counts', y='y obs', hue='area', ax=axes[0])
-    sns.scatterplot(df, x='total_counts', y='y prior', hue='area', ax=axes[1])
-    sns.scatterplot(df, x='total_counts', y='y posterior', hue='area', ax=axes[2])
+    plot_quantities = ['obs', 'prior', 'posterior']
+    for idx, pq in enumerate(plot_quantities):
+        sns.scatterplot(df, x='total_counts', y=f'y {pq}', hue='area', ax=axes[idx])
+        axes[idx].set_title(f'{pq}')
 
     return fig, axes
 
@@ -161,14 +165,23 @@ plot_data_prior_posterior(baseline_model)
 
 # %% Next model - B1 partial pooling
 
-partpool_no_b2_model = LinearPartPoolNoInteraction()
+partpool_no_b2_model = LinearPartPoolNoInteraction(
+    {
+        "β1_sigma_mu_prior": 0.005,
+        "β1_sigma_std_prior": 0.01
+    }
+)
 
-partpool_no_b2_model.sample_prior_predictive(X)
-plot_sample_data(X, partpool_no_b2_model.prior_predictive.y.mean(dim=('sample')))
+prior_predictive_samples = partpool_no_b2_model.sample_prior_predictive(X)
+
+plot_sample_data(X, prior_predictive_samples.y.mean(dim=('sample')))
 partpool_no_b2_model.fit(X, y)
-az.plot_trace(partpool_no_b2_model.idata, figsize=(20,10))
+
+# %%
+az.plot_trace(partpool_no_b2_model.idata, var_names=('sigma_b1', 'σ'), figsize=(20,10))
 az.summary(partpool_no_b2_model.idata)
 plot_data_prior_posterior(partpool_no_b2_model)
+az.plot_forest(partpool_no_b2_model.idata, var_names=["^β"])
 
 
 # %%

@@ -1256,7 +1256,7 @@ packages:
 - pypi: ./
   name: hs-models
   version: 0.1.0
-  sha256: 6edd2557c429076e4b1dd5ac804c8f0e921eab39dfcfc25a67474b7493024011
+  sha256: be30947461ac32a63f7a444f9b6e2e5ed12c99f88ce3ada597ba888a3062d641
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.1.0-pyhd8ed1ab_0.conda

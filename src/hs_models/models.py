@@ -206,6 +206,7 @@ class LinearPartPoolNoInteraction(ModelBuilder):
         y = y.values if isinstance(y, pd.Series) else y
 
         with pm.Model(coords=coords) as self.model:
+            
             # Create data containers
             area_idx = pm.Data("area_idx", area_idx_int)
 
@@ -216,13 +217,13 @@ class LinearPartPoolNoInteraction(ModelBuilder):
                 )
             y_obs = pm.Data("y_obs", y)
 
-            β1_sigma_mu_prior      = self.model_config.get("β1_sigma_mu_prior", 0.03)
-            β1_sigma_std_prior      = self.model_config.get("β1_sigma_std_prior", 0.06)
+            β1_sigma_mu_prior      = self.model_config.get("β1_sigma_mu_prior", 0.005)
+            β1_sigma_std_prior      = self.model_config.get("β1_sigma_std_prior", 0.01)
 
             σ_prior = self.model_config.get("σ_prior", 600.0)
 
             # prior on the shared distribution of slopes
-            sigma_b1 = pm.Gamma("sigma_b", mu=β1_sigma_prior, sigma=β1_sigma_std_prior)
+            sigma_b1 = pm.Gamma("sigma_b1", mu=β1_sigma_mu_prior, sigma=β1_sigma_std_prior)
 
             # group-specific slope priors
             β1 = pm.HalfNormal("β1", sigma=sigma_b1, dims="area")
@@ -264,8 +265,8 @@ class LinearPartPoolNoInteraction(ModelBuilder):
         It will be passed to the class instance on initialization, in case the user doesn't provide any model_config of their own.
         """
         model_config: Dict = { 
-            "β1_sigma_mu_prior": 0.03,
-            "β1_sigma_std_prior": 0.06,
+            "β1_sigma_mu_prior": 0.005,
+            "β1_sigma_std_prior": 0.01,
             "σ_prior": 600.0
         }
         return model_config
@@ -394,6 +395,7 @@ class AreaCountInteraction1DPartPool(ModelBuilder):
             # group-specific area-count interaction term priors
             mu_b2 = pm.Normal("mu_b", mu=β2_mean_mu_prior, sigma=β2_mean_sigma_prior)
             sigma_b2 = pm.Exponential("sigma_b", β2_std_lambda_prior)
+
             β2 = pm.Normal("β2", mu=mu_b2, sigma=sigma_b2, dims="area")
 
             # model error
@@ -501,8 +503,6 @@ class AreaCountInteraction1DPartPool(ModelBuilder):
         # and usually we would need to do some preprocessing, or generate the coords from the data.
         self.X = X
         self.y = y
-
-
 
 
 class AreaCountInteraction1DPartPoolPositive(ModelBuilder):
