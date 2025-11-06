@@ -217,16 +217,17 @@ class LinearPartPoolNoInteraction(ModelBuilder):
                 )
             y_obs = pm.Data("y_obs", y)
 
-            β1_sigma_mu_prior      = self.model_config.get("β1_sigma_mu_prior", 0.005)
-            β1_sigma_std_prior      = self.model_config.get("β1_sigma_std_prior", 0.01)
+            β1_mu_prior      = self.model_config.get("β1_mu_prior", 0.005)
+            β1_sigma_prior      = self.model_config.get("β1_sigma_prior", 0.01)
 
             σ_prior = self.model_config.get("σ_prior", 600.0)
 
             # prior on the shared distribution of slopes
-            sigma_b1 = pm.Gamma("sigma_b1", mu=β1_sigma_mu_prior, sigma=β1_sigma_std_prior)
+            mu_β1 = pm.HalfNormal("mu_β1", sigma=β1_mu_prior)
+            sigma_β1 = pm.HalfNormal("sigma_β1", sigma=β1_sigma_prior)
 
             # group-specific slope priors
-            β1 = pm.HalfNormal("β1", sigma=sigma_b1, dims="area")
+            β1 = pm.Gamma("β1", mu=mu_β1, sigma=sigma_β1, dims="area")
 
             # model error
             σ = pm.HalfCauchy("σ", σ_prior)
@@ -265,8 +266,8 @@ class LinearPartPoolNoInteraction(ModelBuilder):
         It will be passed to the class instance on initialization, in case the user doesn't provide any model_config of their own.
         """
         model_config: Dict = { 
-            "β1_sigma_mu_prior": 0.005,
-            "β1_sigma_std_prior": 0.01,
+            "β1_mu_prior": 0.005,
+            "β1_sigma_prior": 0.01,
             "σ_prior": 600.0
         }
         return model_config
