@@ -558,7 +558,7 @@ class LinearPartPoolB2(ModelBuilder):
             β2_mu_prior      = self.model_config.get("β2_mu_prior", 0.02)
             β2_sigma_prior      = self.model_config.get("β2_sigma_prior", 0.1)
 
-            σ_prior = self.model_config.get("σ_prior", 1000.0)
+            σ_prior = self.model_config.get("σ_prior", 100.0)
 
             # prior on the shared distribution of slopes
             mu_β2 = pm.HalfNormal("mu_β2", sigma=β2_mu_prior)
@@ -606,7 +606,7 @@ class LinearPartPoolB2(ModelBuilder):
         model_config: Dict = { 
             "β2_mu_prior": 0.02,
             "β2_sigma_prior": 0.1,
-            "σ_prior": 1000.0
+            "σ_prior": 100.0
         }
         return model_config
 

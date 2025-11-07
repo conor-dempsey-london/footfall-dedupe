@@ -87,14 +87,7 @@ def main(model: Annotated[Literal[
             f'{model._model_type}_trace.png'
         ))
         plt.close()
-
-        az.summary(model.idata)
-        plt.savefig(os.path.join(
-            env_vars['MODEL_FIT_FIGS'],
-            f'{model._model_type}_summary.png'
-        ))
-        plt.close()
-
+        
         fig, _ = plot_data_prior_posterior(model)
         fig.savefig(os.path.join(
             env_vars['MODEL_FIT_FIGS'],
