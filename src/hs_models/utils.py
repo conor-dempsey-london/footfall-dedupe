@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np 
 import boto3
 import arviz as az
@@ -8,6 +9,9 @@ from typing import Tuple, Dict
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import xarray as xr
+
+sns.set_theme(style="ticks")
+
 
 from hs_models.models import AreaCountInteraction1DPartPool
 
@@ -468,3 +472,68 @@ def load_9_models(
         models[count_type] = models_count_type
 
     return models
+
+
+def plot_sample_data(X, y, filename=None):
+    X_all = X.copy()
+    X_all['deduped counts'] = y.copy()
+    X_all.rename(columns={'total_counts': 'total counts'}, inplace=True)
+
+    n_x=3 
+    n_y = 3
+    n=n_x * n_y
+    n_sample = 1 
+
+    b1 = -0.005
+    b2 = 0.185
+
+    area_bins = np.linspace(X_all['area_size'].min(), X_all['area_size'].max(), n+1)
+
+    X_all['area_bin'] = pd.cut(X_all['area_size'], area_bins)
+
+    sample_areas = X_all.groupby('area_bin').apply(lambda x: x.sample(1), include_groups=False)['area_id']
+
+    X_plot = X_all[X_all['area_id'].isin(sample_areas)].sort_values('area_bin')
+
+    def scatter_w_fit(x, y, z, **kwargs):
+        sns.scatterplot(x=x, y=y, **kwargs)
+        xmin, xmax = (
+            x.min(), 
+            x.max()
+        )
+        ymin, ymax = (
+            b1*x.min() + b2*x.min()*z.mean(), 
+            b1*x.max() + b2*x.max()*z.mean(),
+        )
+        plt.plot((xmin, xmax), (ymin, ymax), '-k')
+
+    g = sns.FacetGrid(X_plot, col='area_id', hue='area_bin', palette='flare', col_wrap=3)
+    g.map(scatter_w_fit, 'total counts', 'deduped counts', 'area_size')
+
+    if filename:
+        try:
+            g.savefig(filename)
+        except:
+            print(f'could not save figure to file {filename}')
+
+    return g
+
+def plot_data_prior_posterior(model):
+
+    df = pd.DataFrame(
+        {
+            'total_counts': model.idata.fit_data.total_counts,
+            'area': model.idata.fit_data.area_size,
+            'y obs': model.idata.fit_data.y,
+            'y prior': model.idata.prior_predictive.y.mean(dim=('chain', 'draw')),
+            'y posterior': model.idata.posterior_predictive.y.mean(dim=('chain', 'draw')),
+        }
+    )
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4), sharex=True, sharey=True)
+    plot_quantities = ['obs', 'prior', 'posterior']
+    for idx, pq in enumerate(plot_quantities):
+        sns.scatterplot(df, x='total_counts', y=f'y {pq}', hue='area', ax=axes[idx])
+        axes[idx].set_title(f'{pq}')
+
+    return fig, axes
