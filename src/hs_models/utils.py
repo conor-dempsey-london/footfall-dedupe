@@ -491,7 +491,7 @@ def plot_sample_data(X, y, filename=None):
 
     X_all['area_bin'] = pd.cut(X_all['area_size'], area_bins)
 
-    sample_areas = X_all.groupby('area_bin').apply(lambda x: x.sample(1), include_groups=False)['area_id']
+    sample_areas = X_all.groupby('area_bin', observed=False).apply(lambda x: x.sample(1), include_groups=False)['area_id']
 
     X_plot = X_all[X_all['area_id'].isin(sample_areas)].sort_values('area_bin')
 
