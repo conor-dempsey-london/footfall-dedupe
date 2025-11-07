@@ -16,10 +16,13 @@ import matplotlib.pyplot as plt
 from hs_models.utils import (
     load_footfall_dedupe_data, 
     get_sample_of_footfall_dedupe_data,
+    plot_sample_data,
+    plot_data_prior_posterior
 )
 from hs_models.models import (
-    LinearPooledNoInteraction,
-    LinearPartPoolNoInteraction,
+    LinearPoolB1,
+    LinearPartPoolB1,
+    LinearPoolB1PoolB2,
     AreaCountInteraction1DPartPoolPositive,
 )
 
@@ -145,7 +148,7 @@ model_config = {
     "σ_prior": 600.0
 }
 
-baseline_model = LinearPooledNoInteraction(model_config)
+baseline_model = LinearPoolB1()
 
 # %% 3. Prior predictive checks
 prior_predictive_samples = baseline_model.sample_prior_predictive(X)
@@ -165,23 +168,32 @@ plot_data_prior_posterior(baseline_model)
 
 # %% Next model - B1 partial pooling
 
-partpool_no_b2_model = LinearPartPoolNoInteraction(
-    {
-        "β1_sigma_mu_prior": 0.005,
-        "β1_sigma_std_prior": 0.01
-    }
-)
+partpool_no_b2_model = LinearPartPoolNoInteraction()
 
 prior_predictive_samples = partpool_no_b2_model.sample_prior_predictive(X)
 
 plot_sample_data(X, prior_predictive_samples.y.mean(dim=('sample')))
 partpool_no_b2_model.fit(X, y)
 
-# %%
-az.plot_trace(partpool_no_b2_model.idata, var_names=('sigma_b1', 'σ'), figsize=(20,10))
+az.plot_trace(partpool_no_b2_model.idata, var_names=('mu_β1', 'sigma_β1', 'σ'), figsize=(20,10))
 az.summary(partpool_no_b2_model.idata)
 plot_data_prior_posterior(partpool_no_b2_model)
-az.plot_forest(partpool_no_b2_model.idata, var_names=["^β"])
+az.plot_forest(partpool_no_b2_model.idata, var_names=["^β"], filter_vars='regex')
 
+
+# %% Next model - B1 and B2 pooled
+
+pooled_b1b2_model = LinearPoolB1PoolB2()
+
+prior_predictive_samples = pooled_b1b2_model.sample_prior_predictive(X)
+
+plot_sample_data(X, prior_predictive_samples.y.mean(dim=('sample')))
+pooled_b1b2_model.fit(X, y)
 
 # %%
+az.plot_trace(pooled_b1b2_model.idata, var_names=('mu_β1', 'sigma_β1', 'σ'), figsize=(20,10))
+az.summary(pooled_b1b2_model.idata)
+plot_data_prior_posterior(pooled_b1b2_model)
+az.plot_forest(pooled_b1b2_model.idata, var_names=["^β"], filter_vars='regex')
+
+

@@ -13,3 +13,5 @@ output
 # pymc artifacts
 *.pyc
 
+data/input/X_sample.csv
+data/input/y_sample.csv
