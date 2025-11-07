@@ -1,13 +1,15 @@
 import typer
 from typing_extensions import Annotated, Literal
 import pandas as pd
+import matplotlib.pyplot as plt
+import arviz as az
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 from hs_models.models import (
     LinearPoolB1,
-    LinearPartPoolB1,
+    LinearPartPoolB1, 
     LinearPoolB1PoolB2,
     AreaCountInteraction1DPartPoolPositive,
 )
@@ -17,23 +19,29 @@ from hs_models.utils import (
     plot_data_prior_posterior
 )
 
-
 def main(model: Annotated[Literal[
     'baseline',
     'partpool_b1',
     'pool_b1b2',
-    'partpool_b1b2'
+    'partpool_b1b2',
+    'all'
 ], typer.Option()] = 'baseline'):
 
     match model:
         case 'baseline':
-            model = LinearPoolB1()
+            models = [LinearPoolB1()]
         case 'partpool_b1':
-            model = LinearPartPoolB1()
+            models = [LinearPartPoolB1()]
         case 'pool_b1b2':
-            model = LinearPoolB1PoolB2()
+            models = [LinearPoolB1PoolB2()]
         case 'partpool_b1b2':
-            model = AreaCountInteraction1DPartPoolPositive()
+            models = [AreaCountInteraction1DPartPoolPositive()]
+        case 'all':
+            models = [
+                LinearPoolB1(),
+                LinearPartPoolB1(),
+                LinearPoolB1PoolB2(),
+            ]
 
     load_dotenv()
 
@@ -42,34 +50,54 @@ def main(model: Annotated[Literal[
         'SAMPLE_Y', 
         'SAMPLE_DIR', 
         'MODEL_DIR',
+        'MODEL_FIT_FIGS'
     ]
 
     env_vars = {}
-    for dir_check in env_var_names:
-        env_vars[dir_check]=os.getenv(dir_check)
-        if env_vars[dir_check] is None:
-            raise ValueError(f"{dir_check} not found in .env file")
+    for env_var in env_var_names:
+        env_vars[env_var]=os.getenv(env_var)
+        if env_vars[env_var] is None:
+            raise ValueError(f"{env_var} not found in .env file")
 
     Path(env_vars['MODEL_DIR']).mkdir(parents=True, exist_ok=True)
+    Path(env_vars['MODEL_FIT_FIGS']).mkdir(parents=True, exist_ok=True)
     
     # 0. load data
     X = pd.read_csv(os.path.join(env_vars['SAMPLE_DIR'], env_vars['SAMPLE_X']))
-    y = pd.read_csv(os.path.join(env_vars['SAMPLE_DIR'], env_vars['SAMPLE_Y']))
+    y = pd.read_csv(os.path.join(env_vars['SAMPLE_DIR'], env_vars['SAMPLE_Y'])).squeeze()
 
-    # 1. Prior predictive checks
-    prior_predictive_samples = model.sample_prior_predictive(X)
-    plot_sample_data(X, prior_predictive_samples.y.mean(dim=('sample')))
+    for idx, model in enumerate(models):
+        print(f'Sampling from model {idx+1} of {len(models)}')
 
-    # 2. Fit model
-    model.fit(X, y)
+        # 1. Prior predictive checks
+        prior_predictive_samples = model.sample_prior_predictive(X)
 
-    # 3. Posterior checks
-    az.plot_trace(model.idata, figsize=(20,10))
-    az.summary(model.idata)
-    plot_data_prior_posterior(model)
+        # 2. Fit model
+        model.fit(X, y)
 
-    # 4. Save model
-    model.save(os.path.join(env_vars['MODEL_DIR'], model._model_type))
+        # 3. Posterior checks
+        az.plot_trace(model.idata, figsize=(20,10))
+        plt.savefig(os.path.join(
+            env_vars['MODEL_FIT_FIGS'],
+            f'{model._model_type}_trace.png'
+        ))
+        plt.close()
+
+        az.summary(model.idata)
+        plt.savefig(os.path.join(
+            env_vars['MODEL_FIT_FIGS'],
+            f'{model._model_type}_summary.png'
+        ))
+        plt.close()
+
+        fig, _ = plot_data_prior_posterior(model)
+        fig.savefig(os.path.join(
+            env_vars['MODEL_FIT_FIGS'],
+            f'{model._model_type}_data_prior_posterior.png'
+        ))
+
+        # 4. Save model
+        model.save(os.path.join(env_vars['MODEL_DIR'], model._model_type))
 
 
 if __name__ == "__main__":
