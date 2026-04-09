@@ -12,7 +12,7 @@ from hs_models.models import (
     LinearPartPoolB1, 
     LinearPoolB1PoolB2,
     LinearPartPoolB2,
-    AreaCountInteraction1DPartPoolPositive,
+    LinearPartPoolB2PoolB1
 )
 
 from hs_models.utils import (
@@ -26,6 +26,7 @@ def main(model: Annotated[Literal[
     'pool_b1b2',
     'partpool_b1b2',
     'partpool_b2',
+    'partpool_b2_pool_b1',
     'all'
 ], typer.Option()] = 'baseline'):
 
@@ -40,12 +41,15 @@ def main(model: Annotated[Literal[
             models = [AreaCountInteraction1DPartPoolPositive()]
         case 'partpool_b2':
             models = [LinearPartPoolB2()]
+        case 'partpool_b2_pool_b1':
+            models = [LinearPartPoolB2PoolB1()]
         case 'all':
             models = [
                 LinearPoolB1(),
                 LinearPartPoolB1(),
                 LinearPoolB1PoolB2(),
-                LinearPartPoolB2()
+                LinearPartPoolB2(),
+                LinearPartPoolB2PoolB1()
             ]
 
     load_dotenv()

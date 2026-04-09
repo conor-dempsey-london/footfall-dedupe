@@ -26,3 +26,4 @@ Once you have set the environment variables to point to your training data, to s
 `
 pixi run python ./fit_models_output_lookup.py
 `
+

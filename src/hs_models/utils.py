@@ -10,10 +10,19 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import xarray as xr
 
-sns.set_theme(style="ticks")
+import os
 
+from dotenv import load_dotenv
 
 from hs_models.models import AreaCountInteraction1DPartPool
+
+load_dotenv()
+
+sns.set_theme(style="ticks")
+
+project_root=os.getenv("PROJ_ROOT")
+if project_root is None:
+    raise ValueError("PROJ_ROOT not found in .env file")
 
 
 HEX_AREA = 0.079566 #area of a hex grid in km2
@@ -118,7 +127,7 @@ def load_footfall_dedupe_data(
     observation_df = observation_df[~observation_df['area'].isna()]
 
     # for now we remove the very largest areas which show less predictable behaviour
-    observation_df = observation_df[observation_df['area'] < 0.4]
+    # observation_df = observation_df[observation_df['area'] < 0.4]
 
     # create area bins so we can take a stratified sample across the range of area sizes
     observation_df['area_bin'] = pd.qcut(observation_df['area'], q=6)
@@ -164,6 +173,7 @@ def load_footfall_dedupe_data(
             stats_df['count_time'] = time_indicator
 
             stats_dfs.append(stats_df)
+            
 
     stats_df = pd.concat(stats_dfs)
     stats_df = stats_df.merge(area_df[['poi_nuid', 'area']], on='poi_nuid', how='left')
@@ -467,7 +477,10 @@ def load_9_models(
             print(f'Loading model for: {count_type}s {count_time}')
             
             models_count_type[count_time] = model_type.load(
-                f'./{model_dir}/{file_prefix}_{count_type}_{count_time}.nc',
+                os.path.join(
+                    project_root, 
+                    model_dir,
+                    f'{file_prefix}_{count_type}_{count_time}.nc'),
                 )
         models[count_type] = models_count_type
 

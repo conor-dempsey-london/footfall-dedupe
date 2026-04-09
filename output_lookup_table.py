@@ -77,7 +77,7 @@ for count_type in count_types:
     y[count_type] = y_count_type
     models[count_type] = models_count_type
 
-areas = np.linspace(0, 0.5, 100)
+areas = np.linspace(0, 40, 500)
 scale_factor_dfs = []
 
 Path("./models").mkdir(exist_ok=True)

@@ -10,6 +10,7 @@ from hs_models.models import (
     LinearPartPoolB1, 
     LinearPoolB1PoolB2,
     LinearPartPoolB2,
+    LinearPartPoolB2PoolB1
 )
 
 
@@ -19,8 +20,9 @@ def main():
         LinearPoolB1(),
         LinearPartPoolB1(),
         LinearPoolB1PoolB2(),
-        LinearPartPoolB2()
-    ]
+        LinearPartPoolB2(),
+        LinearPartPoolB2PoolB1()
+    ] 
 
     load_dotenv()
 

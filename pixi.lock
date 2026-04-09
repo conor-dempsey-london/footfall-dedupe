@@ -255,6 +255,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/58/15/915ceb4340a3c1a5d3bc8349c525fa42592614b68a249250eb9be3f7e5a1/better_optimize-0.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/a6/4d/5d1279dba139e7e6bb81c45cf600f2122471d1eb2caba71175bfa7155900/piecewise_regression-1.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6c/98/468cb649f208a6f1279448e6e5247b37ae79cf5e4041186f1e2ef3d16345/pydantic-2.12.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/62/273dd70b0026a085c7b74b000394e1ef95719ea579c76ea2f0cc8893736d/pydantic_core-2.41.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: git+https://github.com/conor-dempsey-london/pymc-extras.git#13cc53baaf75c8f224387d1d38bf53bae360f29e
@@ -1273,7 +1274,9 @@ packages:
 - pypi: ./
   name: hs-models
   version: 0.1.0
-  sha256: ed9487226e3c2d56aec6d0f681ff7963115bd10d80632f2c3de925b2e4225fbf
+  sha256: 253c93cf62f18e0bfd8c5eb8ab0785f1ee0883b555146b8b4e655b2419534da4
+  requires_dist:
+  - piecewise-regression>=1.5.0
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.1.0-pyhd8ed1ab_0.conda
@@ -2602,6 +2605,15 @@ packages:
   - pkg:pypi/pickleshare?source=hash-mapping
   size: 11748
   timestamp: 1733327448200
+- pypi: https://files.pythonhosted.org/packages/a6/4d/5d1279dba139e7e6bb81c45cf600f2122471d1eb2caba71175bfa7155900/piecewise_regression-1.5.0-py3-none-any.whl
+  name: piecewise-regression
+  version: 1.5.0
+  sha256: 9666346fca04db39aaddc8ceee0a22d06c3ee3fa7c58149487c020faf791a9b8
+  requires_dist:
+  - numpy
+  - matplotlib
+  - scipy
+  - statsmodels
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pillow-11.3.0-py313h8db990d_0.conda
   sha256: 73067c9a1ea4857ce9fb6788d404cd7d931ba323ad26eddf083c5b12dc8d73c0
   md5: 114a74a6e184101112fdffd3a1cb5b8f
