@@ -1,20 +1,36 @@
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import seaborn as sns
 import numpy as np 
-import boto3
 import arviz as az
 from typing import Tuple, Dict
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import xarray as xr
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.preprocessing import PolynomialFeatures
+from sqlalchemy import select, MetaData, Table, create_engine, select, func, and_, inspect
+
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.expression import Executable, ClauseElement
+
+import operator
+
+from hs_models.constants import (
+    FOOTFALL_COUNTS_TABLE,
+    HEX_GEOM_TABLE,
+    HS_TABLE,
+    TC_TABLE,
+    BID_TABLE,
+    HEX_AREA
+)
 
 import os
 
 from dotenv import load_dotenv
-
-from hs_models.models import AreaCountInteraction1DPartPool
 
 load_dotenv()
 
@@ -25,20 +41,450 @@ if project_root is None:
     raise ValueError("PROJ_ROOT not found in .env file")
 
 
-HEX_AREA = 0.079566 #area of a hex grid in km2
+def plot_df(df, filename, title_string='', height=1200, width=400):
+    formatted_values = []
+    for col in df.columns:
+        # Check if the column is a float type
+        if pd.api.types.is_float_dtype(df[col]):
+            formatted_values.append(df[col].round(2))
+        
+        else:
+            formatted_values.append(df[col])
+            
+    fig = go.Figure(data=[go.Table(
+        # Custom Header Styling
+        header=dict(
+            values=list(df.columns),
+            fill_color='#1f77b4',     
+            font=dict(color='white', size=14, family="Helvetica"),
+            align='center',
+            height=35
+        ),
+        # Custom Cells Styling
+        cells=dict(
+            values=formatted_values,
+            fill_color=[['#f8f9fa', '#ffffff'] * 3], 
+            font=dict(color='black', size=12, family="Helvetica"),
+            align='center',
+            height=30
+        )
+    )])
+
+    fig.update_layout(    
+        width=width, height=height,
+        margin=dict(l=10, r=10, t=40, b=10),
+        title=dict(
+            text=f"<b>{title_string}</b>",
+            font=dict(size=18, family="Helvetica", color="#333333"),
+            x=0.5,
+            xanchor='center',
+            y=0.96     
+        )
+    )
+
+    
+    fig.write_image(filename, width=width, height=height)
+
+    fig.show()
+
+    return fig
+
+def zscore(s):
+    if s.std() == 0:
+        return 0
+    return (s - s.mean()) / s.std()
+
+def evaluate_dedupe_mape_threshold(y_test, y_pred, threshold=100):
+    m = y_test >= threshold
+    return mean_absolute_percentage_error(y_test[m], y_pred[m])
+
+def load_data_long(dup_threshold=100000, interaction_cols = []):
+    file_name = os.getenv("COUNT_DATA_FILE")
+    area_file = os.getenv("AREA_FILE")
+
+    df_long = pd.read_csv(file_name, parse_dates=['count_date'])
+    area_df = pd.read_csv(area_file) 
+    area_df['area'] = area_df['area'] / 1e6
+
+    df_long['poi_nuid']=df_long['poi_type'] + '_' + df_long['poi_id'].astype(str)
+    area_df['poi_nuid'] = area_df['poi_type'] + '_' + area_df['poi_id'].astype(str)
+    area_df = area_df.groupby('poi_nuid')['area'].first().reset_index()
+
+    df_long.rename(columns={
+        'resident': 'duplicated_residents',
+        'worker': 'duplicated_workers',
+        'visitor': 'duplicated_visitors',
+        'total_unique_domestic_visitors': 'total_unique_visitors'
+    }, inplace=True)
+
+    # add area data to main df
+    df_long = df_long.merge(area_df[['poi_nuid', 'area']], on='poi_nuid', how='inner')
+
+    df_long["id"] = df_long.index
+
+    df_long = pd.wide_to_long(
+        df_long,
+        stubnames=["total_unique", "duplicated"],
+        i="id",
+        j="count_type",
+        sep='_',
+        suffix=r"\w+"
+    )
+
+    df_long = df_long.reset_index().drop(columns=['id'])
+    df_long.dropna(inplace=True)
+
+    df_long['area_hex'] = df_long['area'] / HEX_AREA
+
+    df_long['count_type'] = df_long['count_type'].astype('category')
+    df_long['caz_inner_outer'] = df_long['caz_inner_outer'].astype('category')
+    df_long['poi_type'] = df_long['poi_type'].astype('category')
+    df_long['time_indicator'] = df_long['time_indicator'].astype('category')
+    df_long['poi_nuid'] = df_long['poi_nuid'].astype('category')
+    
+    df_long['year'] = df_long['count_date'].dt.year
+    df_long['month'] = df_long['count_date'].dt.month
+    df_long['day'] = df_long['count_date'].dt.day
+    df_long['day_of_week'] = df_long['count_date'].dt.dayofweek
+    df_long['hour'] = df_long['count_date'].dt.hour  
+    df_long['is_weekend'] = (df_long['count_date'].dt.dayofweek >= 5).astype(int)
+
+    df_long['timestamp'] = df_long['count_date'].astype('int64') // 10**9
+
+    df_long['count_date'] = pd.to_datetime(df_long['count_date'])
+
+    df_long['dup_zscored_by_area'] = df_long.groupby('poi_nuid')['duplicated'].transform(zscore)
+
+    df_long = df_long[(df_long['duplicated'] < dup_threshold) & (df_long['duplicated'] > 0)]
+
+    # add interaction terms
+    if len(interaction_cols) > 0:
+        poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)
+        interactions = poly.fit_transform(df_long[interaction_cols])
+        interaction_names = poly.get_feature_names_out(interaction_cols)
+        df_interactions = pd.DataFrame(interactions, columns=interaction_names, index=df_long.index)
+        df_long = pd.concat([df_long, df_interactions.drop(columns=interaction_cols)], axis=1)
+
+    return df_long
+
+
+def join_pois_from_db(df):
+
+    unique_highstreets = df.loc[
+            df['poi_nuid'].str.startswith('highstreets'), 'poi_nuid',
+        ].str.slice(12).unique().astype(int).tolist()
+    unique_tcs = df.loc[
+            df['poi_nuid'].str.startswith('towncentres'), 'poi_nuid',
+        ].str.slice(12).unique().astype(int).tolist()
+    unique_bids = df.loc[
+            df['poi_nuid'].str.startswith('bids'), 'poi_nuid',
+        ].str.slice(5).unique().astype(int).tolist()
+
+    database = os.getenv("PG_DATABASE")
+    username = os.getenv("PG_USER")
+    password = os.getenv("PG_PASSWORD")
+    host = os.getenv("PG_HOST")
+    port = os.getenv("PG_PORT")
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{username}:{password}@"
+        f"{host}:{port}/{database}"
+    )
+
+    metadata = MetaData()
+    hs_table = Table(HS_TABLE, metadata, autoload_with=engine)
+    tc_table = Table(TC_TABLE, metadata, autoload_with=engine)
+    bid_table = Table(BID_TABLE, metadata, autoload_with=engine)
+
+    query_hs = select(hs_table).where(hs_table.c.highstreet_id.in_(unique_highstreets))
+    query_tc = select(tc_table).where(tc_table.c.tc_id.in_(unique_tcs))
+    query_bid = select(bid_table).where(bid_table.c.bid_id.in_(unique_bids))
+
+    with engine.connect() as conn:
+        df_hs   = gpd.read_postgis(query_hs, conn)
+        df_tc   = gpd.read_postgis(query_tc, conn)
+        df_bid  = gpd.read_postgis(query_bid, conn)
+
+    return df_hs, df_tc, df_bid
+
+def get_area_geometry_from_database():
+
+    database = os.getenv("PG_DATABASE")
+    username = os.getenv("PG_USER")
+    password = os.getenv("PG_PASSWORD")
+    host = os.getenv("PG_HOST")
+    port = os.getenv("PG_PORT")
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{username}:{password}@"
+        f"{host}:{port}/{database}"
+    )
+
+    metadata = MetaData()
+    hs_table = Table(HS_TABLE, metadata, autoload_with=engine)
+    tc_table = Table(TC_TABLE, metadata, autoload_with=engine)
+    bid_table = Table(BID_TABLE, metadata, autoload_with=engine)
+
+    query_hs = select(hs_table)
+    query_tc = select(tc_table)
+    query_bid = select(bid_table)
+
+    with engine.connect() as conn:
+        df_hs   = gpd.read_postgis(query_hs, conn)
+        df_tc   = gpd.read_postgis(query_tc, conn)
+        df_bid  = gpd.read_postgis(query_bid, conn)
+
+    return df_hs, df_tc, df_bid
+
+
+def get_hex_geometry():
+
+    database = os.getenv("PG_DATABASE")
+    username = os.getenv("PG_USER")
+    password = os.getenv("PG_PASSWORD")
+    host = os.getenv("PG_HOST")
+    port = os.getenv("PG_PORT")
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{username}:{password}@"
+        f"{host}:{port}/{database}"
+    )
+
+    metadata = MetaData()
+    hex_table = Table(HEX_GEOM_TABLE, metadata, autoload_with=engine)
+    query_hex = select(hex_table)
+    with engine.connect() as conn:
+        df_footfall  = gpd.read_postgis(query_hex, conn)
+
+    return df_footfall
+
+
+OPERATOR_MAP = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<": operator.lt,
+    "<=": operator.le,
+    "like": lambda col, val: col.like(val),
+    "ilike": lambda col, val: col.ilike(val),
+}
+
+def build_sql_query(table, params: dict):
+    """
+    Dynamically constructs a SQLAlchemy 2.0 executable select statement 
+    from a structured query parameter dictionary for a Core Table.
+
+    Parameters
+    ----------
+    table : sqlalchemy.sql.schema.Table
+        The target SQLAlchemy Core Table object to query against.
+    params : dict
+        A structured dictionary containing the query configurations. 
+        Supported top-level keys include:
+
+        * 'select' : list of str, optional
+            A list of column names to retrieve. If both 'select' and 
+            'aggregations' are omitted, defaults to selecting all columns (`SELECT *`).
+            Example: ["id", "name", "email"]
+
+        * 'where' : list of tuples, optional
+            A list of filtering conditions evaluated as an implicit logical `AND`. 
+            Each filter must be a tuple of exactly three elements: 
+            `(column_name: str, operator: str, value: Any)`.
+            Supported operators: "==", "!=", ">", ">=", "<", "<=", "like", "ilike".
+            Example: [("age", ">=", 18), ("status", "==", "active")]
+
+        * 'aggregations' : list of tuples, optional
+            A list of SQL functions to apply to columns. Each item must be a 
+            tuple of exactly three elements: `(column_name: str, function_name: str, alias: str)`.
+            Common functions include: "count", "sum", "avg", "min", "max".
+            Example: [("id", "count", "total_users"), ("salary", "avg", "average_pay")]
+
+        * 'group_by' : list of str, optional
+            A list of column names used to group rows for aggregate queries. 
+            Example: ["department", "status"]
+
+        * 'limit' : int, optional
+            The maximum number of records to return. Must be a positive integer.
+            Example: 50
+
+        * 'offset' : int, optional
+            The number of rows to skip before starting to return records. 
+            Example: 100
+
+    Returns
+    -------
+    sqlalchemy.sql.expression.Select
+        An executable SQLAlchemy 2.0 select statement object ready to be 
+        passed to `session.execute()`.
+
+    Raises
+    ------
+    KeyError
+        If a column name specified in 'select', 'where', 'aggregations', 
+        or 'group_by' does not exist in the provided table configuration.
+
+    Examples
+    --------
+        >>> payload = {
+        ...     "select": ["department"],
+        ...     "where": [("hire_date", ">=", "2023-01-01"), ("status", "==", "Active")],
+        ...     "aggregations": [("id", "count", "total")],
+        ...     "group_by": ["department"],
+        ...     "limit": 10
+        ... }
+        >>> stmt = build_dynamic_table_query(employees_table, payload)
+    """
+    select_items = []
+    
+    if "select" in params:
+        for col_name in params["select"]:
+            select_items.append(table.c[col_name])
+            
+    if "aggregations" in params:
+        for col_name, func_type, alias in params["aggregations"]:
+            db_col = table.c[col_name]
+            # Fetch the sql function dynamically (e.g., func.count, func.sum)
+            sql_func = getattr(func, func_type)(db_col)
+            if alias:
+                sql_func = sql_func.label(alias)
+            select_items.append(sql_func)
+            
+    if not select_items:
+        stmt = select(table)
+    else:
+        stmt = select(*select_items)
+
+    if "where" in params:
+        where_clauses = []
+        for col_name, op_str, value in params["where"]:
+            db_col = table.c[col_name]
+            op_func = OPERATOR_MAP.get(op_str)
+            
+            if op_func:
+                where_clauses.append(op_func(db_col, value))
+        
+        if where_clauses:
+            stmt = stmt.where(and_(*where_clauses))
+
+    if "group_by" in params:
+        group_cols = [table.c[col] for col in params["group_by"]]
+        stmt = stmt.group_by(*group_cols)
+
+    if "limit" in params:
+        stmt = stmt.limit(params["limit"])
+    if "offset" in params:
+        stmt = stmt.offset(params["offset"])
+
+    return stmt
+
+
+def get_footfall_data(query_dict: dict):
+
+    database = os.getenv("PG_DATABASE")
+    username = os.getenv("PG_USER")
+    password = os.getenv("PG_PASSWORD")
+    host = os.getenv("PG_HOST")
+    port = os.getenv("PG_PORT")
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{username}:{password}@"
+        f"{host}:{port}/{database}"
+    )
+
+    metadata = MetaData()
+    hex_table = Table(FOOTFALL_COUNTS_TABLE, metadata, autoload_with=engine)
+    
+    query_footfall = build_sql_query(hex_table, query_dict)
+        
+    with engine.connect() as conn:
+        df_fotfall  = pd.read_sql(query_footfall, conn)
+
+    return df_fotfall
+
+
+def get_db_metadata():
+
+    database = os.getenv("PG_DATABASE")
+    username = os.getenv("PG_USER")
+    password = os.getenv("PG_PASSWORD")
+    host = os.getenv("PG_HOST")
+    port = os.getenv("PG_PORT")
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{username}:{password}@"
+        f"{host}:{port}/{database}"
+    )
+
+    metadata = MetaData()
+
+    # Reflect all tables found in the database schema
+    metadata.reflect(bind=engine)
+
+    return metadata, engine
+
+
+
+def error_vs_area_plot(df, y_true, y_pred, area_col='area_hex'):
+
+    df = df.copy()
+
+    df['error'] = 100*np.abs((y_true - y_pred)) / y_true
+
+    df_error = df[[
+        'poi_nuid', 
+        area_col, 
+        'count_type', 
+        'time_indicator', 
+        'error', 
+    ]]
+
+    df_error = df_error[np.isfinite(df_error['error'])]
+
+    poi_error = df_error.groupby(['poi_nuid', 'count_type', 'time_indicator'])[[area_col, 'error']].mean().reset_index()
+
+    poi_error['area_bin'] = pd.qcut(poi_error[area_col], q=40)
+    poi_error['area_bin'] = poi_error['area_bin'].apply(lambda x: x.mid)
+
+    g = error_vs_area(poi_error)
+
+    return g, poi_error
+
+
+def error_vs_area(poi_error):
+    g=sns.relplot(
+        data=poi_error,
+        x='area_bin',
+        y='error',
+        # hue='time_indicator',
+        kind='line',     
+        errorbar='ci',   
+        estimator='median',
+        facet_kws = {'sharey': False}
+    )
+    g.refline(y=15, color='red', linestyle='--', linewidth=1, label='15% error')
+    g.refline(y=30, color='green', linestyle='--', linewidth=1, label='30% error')
+
+    g.set(yscale='log')
+    g.set(xscale='log')
+    g.set(ylim=(3, 1000))
+    g.add_legend()
+    g.axes[0][0].set_xlabel('Area [hexes]')
+    g.axes[0][0].set_ylabel('Avg. absolute % error')
+
+    return g
+
+def sigmoid(x, L, k, x0):
+    return L / (1 + np.exp(-k * (x - x0)))
 
 def load_footfall_dedupe_data(
-    bucket, file_name, area_file
-) -> (pd.DataFrame, pd.DataFrame):
-
-    # Load the data
-    s3 = boto3.client('s3') 
-    obj_data = s3.get_object(Bucket= bucket, Key= file_name) 
-    obj_area = s3.get_object(Bucket= bucket, Key= area_file) 
+    file_name, area_file
+):
 
     # get object and file (key) from bucket
     observation_df = pd.read_csv(
-        obj_data['Body'], 
+        file_name, 
         parse_dates=['count_date'],
         low_memory=False) 
 
@@ -48,7 +494,7 @@ def load_footfall_dedupe_data(
     )
 
     # get object and file (key) from bucket
-    area_df = pd.read_csv(obj_area['Body']) 
+    area_df = pd.read_csv(area_file) 
 
     # Keep only the all-day numbers
     # day_mask = observation_df['time_indicator'] == 'DAY'
@@ -224,7 +670,7 @@ def fit_line(x, y):
     x_mean = np.mean(x)
     y_mean = np.mean(y)
 
-    # Calculate the slope (m) using the least squares method
+    # Calculate the slope (m)
     numerator = np.sum((x - x_mean) * (y - y_mean))
     denominator = np.sum((x - x_mean)**2)
     if denominator == 0:
@@ -359,7 +805,7 @@ def plot_data(x, moderator, y, scalarMap, ax=None):
 def posterior_prediction_plot(result, x, moderator, m_quantiles, scalarMap, ax=None):
     """Plot posterior predicted `y`"""
     if ax is None:
-        fig, ax = plt.subplots(1, 1)
+        _, ax = plt.subplots(1, 1)
 
     post = az.extract(result)
     xi = xr.DataArray(np.linspace(np.min(x), np.max(x), 20), dims=["x_plot"])
@@ -460,33 +906,6 @@ def make_all_plots(trace, scalarMap):
     az.plot_posterior(trace, var_names="β2", ax=ax[1])
 
 
-def load_9_models(
-    model_dir='models',
-    model_type=AreaCountInteraction1DPartPool,
-    file_prefix='parpool',
-    count_types=['worker', 'resident', 'visitor'],
-    count_times = ['day', 'am', 'pm']
-    ):
-
-    models = {}
-
-    for count_type in count_types:
-        models_count_type = {}
-
-        for count_time in count_times:
-            print(f'Loading model for: {count_type}s {count_time}')
-            
-            models_count_type[count_time] = model_type.load(
-                os.path.join(
-                    project_root, 
-                    model_dir,
-                    f'{file_prefix}_{count_type}_{count_time}.nc'),
-                )
-        models[count_type] = models_count_type
-
-    return models
-
-
 def plot_sample_data(X, y, filename=None):
     X_all = X.copy()
     X_all['deduped counts'] = y.copy()
@@ -495,7 +914,6 @@ def plot_sample_data(X, y, filename=None):
     n_x=3 
     n_y = 3
     n=n_x * n_y
-    n_sample = 1 
 
     b1 = -0.005
     b2 = 0.185
@@ -531,6 +949,7 @@ def plot_sample_data(X, y, filename=None):
 
     return g
 
+
 def plot_data_prior_posterior(model):
 
     df = pd.DataFrame(
@@ -550,3 +969,32 @@ def plot_data_prior_posterior(model):
         axes[idx].set_title(f'{pq}')
 
     return fig, axes
+
+
+def get_table_indexes(engine, table_name, do_print=False):
+
+    inspector = inspect(engine)
+    indexes = inspector.get_indexes(table_name)
+
+    if do_print:
+        print(f"--- Indexes on table '{FOOTFALL_COUNTS_TABLE}' ---")
+        if not indexes:
+            print("No indexes found!")
+
+        else:
+            for index in indexes:
+                print(f"Index Name: {index['name']}")
+                print(f"  Columns:  {index['column_names']}")
+                print(f"  Unique?:  {index['unique']}")
+                print("-" * 30)
+
+    return indexes
+
+class ExplainAnalyze(Executable, ClauseElement):
+    def __init__(self, stmt):
+        self.stmt = stmt
+
+@compiles(ExplainAnalyze, "postgresql")
+def compile_explain_analyze(element, compiler, **kw):
+    # This prepends the exact syntax dynamically at runtime
+    return f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {compiler.process(element.stmt, **kw)}"

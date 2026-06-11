@@ -15,3 +15,5 @@ output
 
 data/input/X_sample.csv
 data/input/y_sample.csv
+data/hex_vs_daily_all_areas_202425.csv
+data/results_all_areas.csv
